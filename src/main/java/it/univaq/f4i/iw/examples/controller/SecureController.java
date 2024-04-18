@@ -46,7 +46,7 @@ public class SecureController extends ApplicationBaseController {
         Author author = dl.getAuthorDAO().getAuthor(1); //assume it already exists
         if (author != null) {
             new_article.setAuthor(author);
-            new_article.setTitle(SecurityHelpers.addSlashes("NEW ARTICLE FOR ISSUE" + (latest_number + 1)));
+            new_article.setTitle(SecurityHelpers.addSlashes("NEW ARTICLE FOR ISSUE " + (latest_number + 1)));
             new_article.setText(SecurityHelpers.addSlashes("article text"));
             new_article.setIssue(new_issue);
             dl.getArticleDAO().storeArticle(new_article);
