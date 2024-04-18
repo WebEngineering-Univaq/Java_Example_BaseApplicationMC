@@ -1,5 +1,5 @@
 # Java_Example_BaseApplicationMC
-> An mini-framework to support the development simple web applications, part 1: model and controller
+> An mini-framework to support the development of simple web applications, part 1: model and controller
 
 This example contains a mini-framework that combines the session, security 
 and data manipulation best practices addressed by earlier examples, together with
