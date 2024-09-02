@@ -18,7 +18,7 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
-            <version>8.0.32</version>
+            <version>8.2.0</version>
         </dependency>
         <!-- nota: importare direttamente la piattaforma JavaEE 8 
             non è teoricamente corretto perchè Tomcat non la implementa completamente
