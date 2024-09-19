@@ -1,5 +1,7 @@
 package it.univaq.f4i.iw.ex.newspaper.data.dao.impl;
 
+
+
 import it.univaq.f4i.iw.ex.newspaper.data.dao.UserDAO;
 import it.univaq.f4i.iw.ex.newspaper.data.model.User;
 import it.univaq.f4i.iw.ex.newspaper.data.model.impl.proxy.UserProxy;
@@ -15,6 +17,7 @@ import it.univaq.f4i.iw.framework.security.SecurityHelpers;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.sql.Statement;
+import java.util.Arrays;
 
 /**
  *
@@ -37,8 +40,8 @@ public class UserDAO_MySQL extends DAO implements UserDAO {
             //precompile all the queries uses in this class
             sUserByID = connection.prepareStatement("SELECT * FROM user WHERE ID=?");
             sUserByName = connection.prepareStatement("SELECT ID FROM user WHERE username=?");
-            iUser = connection.prepareStatement("INSERT INTO user (username,password) VALUES(?,?)", Statement.RETURN_GENERATED_KEYS);
-            uUser = connection.prepareStatement("UPDATE user SET username=?,password=?,version=? WHERE ID=? and version=?");
+            iUser = connection.prepareStatement("INSERT INTO user (username,password,roles) VALUES(?,?,?)", Statement.RETURN_GENERATED_KEYS);
+            uUser = connection.prepareStatement("UPDATE user SET username=?,password=?,roles=?,version=? WHERE ID=? and version=?");
         } catch (SQLException ex) {
             throw new DataException("Error initializing newspaper data layer", ex);
         }
@@ -78,8 +81,9 @@ public class UserDAO_MySQL extends DAO implements UserDAO {
             UserProxy a = (UserProxy) createUser();
             a.setKey(rs.getInt("ID"));
             a.setUsername(rs.getString("username"));
-            //a.setPassword(rs.getString("password"));
+            //a.setPassword(rs.getString("password"));            
             a.setPassword(SecurityHelpers.getPasswordHashPBKDF2("p")); //for testing purposes only!
+            a.setRoles(Arrays.asList(rs.getString("roles").split("\\|")));
             a.setVersion(rs.getLong("version"));
             return a;
         } catch (SQLException ex) {
@@ -152,13 +156,14 @@ public class UserDAO_MySQL extends DAO implements UserDAO {
                 }
                 uUser.setString(1, user.getUsername());
                 uUser.setString(2, user.getPassword());
+                uUser.setString(3, String.join("|",user.getRoles()));
 
                 long current_version = user.getVersion();
                 long next_version = current_version + 1;
 
-                uUser.setLong(3, next_version);
-                uUser.setInt(4, user.getKey());
-                uUser.setLong(5, current_version);
+                uUser.setLong(4, next_version);
+                uUser.setInt(5, user.getKey());
+                uUser.setLong(6, current_version);
 
                 if (uUser.executeUpdate() == 0) {
                     throw new OptimisticLockException(user);
@@ -168,6 +173,7 @@ public class UserDAO_MySQL extends DAO implements UserDAO {
             } else { //insert
                 iUser.setString(1, user.getUsername());
                 iUser.setString(2, user.getPassword());
+                iUser.setString(3, String.join("|",user.getRoles()));
 
                 if (iUser.executeUpdate() == 1) {
                     //per leggere la chiave generata dal database

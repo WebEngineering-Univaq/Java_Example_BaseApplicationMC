@@ -162,6 +162,7 @@ CREATE TABLE `user` (
   `ID` int NOT NULL AUTO_INCREMENT,
   `username` varchar(100) NOT NULL,
   `password` varchar(300) NOT NULL,
+  `roles` varchar(300) NOT NULL DEFAULT '',
   `version` int unsigned NOT NULL DEFAULT '1',
   PRIMARY KEY (`ID`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -173,7 +174,8 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (4,'a','0518c94d194f5b6ddf06b14fefb1cfb9adfbe3c1dbc2108626bec7252df3e32336b10534a58fc800ed163c36064419b9',1);
+INSERT INTO `user` VALUES (4,'a','0518c94d194f5b6ddf06b14fefb1cfb9adfbe3c1dbc2108626bec7252df3e32336b10534a58fc800ed163c36064419b9','role1|role2',1),
+(5,'b','0518c94d194f5b6ddf06b14fefb1cfb9adfbe3c1dbc2108626bec7252df3e32336b10534a58fc800ed163c36064419b9','role2',1);
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 

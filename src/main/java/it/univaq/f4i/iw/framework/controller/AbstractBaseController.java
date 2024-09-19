@@ -6,8 +6,11 @@ import it.univaq.f4i.iw.framework.utils.ServletHelpers;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import static java.util.function.IntUnaryOperator.identity;
 import java.util.regex.Pattern;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -35,9 +38,13 @@ public abstract class AbstractBaseController extends HttpServlet {
     }
 
     //override to enforce your policy and/or change the login url
-    protected void accessCheckFailed(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException, IOException {
+    protected void accessCheckLoginFailed(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException, IOException {
         String completeRequestURL = request.getRequestURL() + (request.getQueryString() != null ? "?" + request.getQueryString() : "");
         response.sendRedirect("login?referrer=" + URLEncoder.encode(completeRequestURL, "UTF-8"));
+    }
+
+    protected void accessCheckRolesFailed(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException, IOException {
+        handleError("Your roles do not grant access to this resource!", request, response);
     }
 
     //override to provide your login information in the request
@@ -49,34 +56,56 @@ public abstract class AbstractBaseController extends HttpServlet {
             li.put("session-start-ts", s.getAttribute("session-start-ts"));
             li.put("username", s.getAttribute("username"));
             li.put("userid", s.getAttribute("userid"));
+            li.put("roles", s.getAttribute("roles"));
             li.put("ip", s.getAttribute("ip"));
         }
     }
-    
-    ////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////
     private void processBaseRequest(HttpServletRequest request, HttpServletResponse response) {
         //creating the datalayer opens the actual (per-request) connection to the shared datasource
         try (DataLayer datalayer = createDataLayer((DataSource) getServletContext().getAttribute("datasource"))) {
             datalayer.init();
             initRequest(request, datalayer);
-            if (checkAccess(request, response)) {
-                accessCheckSuccessful(request, response);
-                processRequest(request, response);
+            if (checkLoggedAccess(request, response)) {
+                if (checkAccessRoles(request, response)) {
+                    accessCheckSuccessful(request, response);
+                    processRequest(request, response);
+                } else {
+                    accessCheckRolesFailed(request, response);
+                }
             } else {
-                accessCheckFailed(request, response);
+                accessCheckLoginFailed(request, response);
             }
         } catch (Exception ex) {
             handleError(ex, request, response);
         }
     }
 
-    protected boolean checkAccess(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException, IOException {
+    protected boolean checkLoggedAccess(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException, IOException {
         HttpSession s = SecurityHelpers.checkSession(request);
         String uri = request.getRequestURI();
-        //non ridirezioniamo verso la login se richiediamo risorse da non proteggere
-        //do not redirect to login if we are requesting unprotected resources
-        return !(s == null && ((Pattern) getServletContext().getAttribute("protect")).matcher(uri).find());
+        Map<Pattern, String> protect = (Map<Pattern, String>) getServletContext().getAttribute("protect");
+        boolean is_protected = protect.entrySet().stream()
+                .filter((entry) -> (entry.getKey().matcher(uri).find()))
+                .findAny()
+                .isPresent();
+
+        return (!is_protected || (s != null));
+    }
+
+    protected boolean checkAccessRoles(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException, IOException {
+        HttpSession s = request.getSession(false);
+        String uri = request.getRequestURI();        
+        Map<Pattern, String> protect = (Map<Pattern, String>) getServletContext().getAttribute("protect");
+        List<String> allowed_roles = protect.entrySet().stream()
+                .map((entry) -> ((entry.getKey().matcher(uri).find()) ? entry.getValue() : null))
+                .filter((role) -> (role != null))
+                .distinct()
+                .toList();
+
+        return (allowed_roles.isEmpty()
+                || (s != null && allowed_roles.stream().filter(((List<String>) s.getAttribute("roles"))::contains).findAny().isPresent()));
     }
 
     protected void handleError(String message, HttpServletRequest request, HttpServletResponse response) {

@@ -1,5 +1,6 @@
 package it.univaq.f4i.iw.framework.security;
 
+import it.univaq.f4i.iw.ex.newspaper.data.model.User;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -66,7 +67,7 @@ public class SecurityHelpers {
         //seconds from the last session refresh
         long seconds_from_refresh = Duration.between(refresh_ts, now_ts).abs().getSeconds();
         //
-        if (s.getAttribute("userid") == null || start_ts == null) {
+        if (s.getAttribute("userid") == null || s.getAttribute("roles") == null || s.getAttribute("username") == null || start_ts == null) {
             //check sulla validità della sessione
             //second, check is the session contains valid data
             //nota: oltre a controllare se la sessione contiene un userid, 
@@ -106,13 +107,14 @@ public class SecurityHelpers {
         }
     }
 
-    public static HttpSession createSession(HttpServletRequest request, String username, int userid) {
+    public static HttpSession createSession(HttpServletRequest request, User u) {
         //se una sessione è già attiva, rimuoviamola e creiamone una nuova
         //if a session already exists, remove it and recreate a new one
         disposeSession(request);
         HttpSession s = request.getSession(true);
-        s.setAttribute("username", username);
-        s.setAttribute("userid", userid);
+        s.setAttribute("username", u.getUsername());
+        s.setAttribute("userid", u.getKey());
+        s.setAttribute("roles", u.getRoles());
         //
         s.setAttribute("ip", request.getRemoteHost());
         //

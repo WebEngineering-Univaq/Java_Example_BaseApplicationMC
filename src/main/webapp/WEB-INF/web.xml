@@ -1,13 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app version="4.0" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd">
     <context-param>
-        <param-name>security.protect.patterns</param-name>
-        <!-- qui configuriamo i pattern delle URL da proteggere -->
-        <param-value>/secured,/other</param-value>
+        <param-name>security.protect.patterns.role1</param-name>
+        <!-- these pages are accessible by users with role1 -->
+        <param-value>/secured,/ultrasecured</param-value>
+    </context-param>
+    <context-param>
+        <param-name>security.protect.patterns.role2</param-name>
+        <!-- these pages are (also) accessible by users with role2 -->
+        <param-value>/secured</param-value>
     </context-param>
     <context-param>
         <param-name>data.source</param-name>
-        <!-- qui configuriamo in nome della data source da usare nel codice -->
         <param-value>jdbc/webdb2</param-value>
     </context-param>
     <listener>
@@ -27,7 +31,11 @@
     </servlet>
     <servlet>
         <servlet-name>secured</servlet-name>
-        <servlet-class>it.univaq.f4i.iw.examples.controller.SecureController</servlet-class>
+        <servlet-class>it.univaq.f4i.iw.examples.controller.Secure1Controller</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>ultrasecured</servlet-name>
+        <servlet-class>it.univaq.f4i.iw.examples.controller.Secure2Controller</servlet-class>
     </servlet>
     <servlet>
         <servlet-name>public</servlet-name>
@@ -46,6 +54,10 @@
         <url-pattern>/secured</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
+        <servlet-name>ultrasecured</servlet-name>
+        <url-pattern>/ultrasecured</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
         <servlet-name>homepage</servlet-name>
         <url-pattern>/homepage</url-pattern>
     </servlet-mapping>
@@ -54,9 +66,7 @@
         <url-pattern>/public</url-pattern>
     </servlet-mapping>
     <session-config>
-        <session-timeout>
-            30
-        </session-timeout>
+        <session-timeout>30</session-timeout>
     </session-config>
     <welcome-file-list>
         <welcome-file>homepage</welcome-file>

@@ -12,6 +12,7 @@ import java.net.URLEncoder;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,28 +34,32 @@ public class HomepageController extends ApplicationBaseController {
         //note how we pass to the login servlet our URL as the referrer
         result.appendToBody("<p>Please <a href=\"login?referrer=" + URLEncoder.encode((String)request.getAttribute("thispageurl"), "UTF-8") + "\">Login</a></p>");
         result.appendToBody("<p>...or try to access</p><ul>");
-        result.appendToBody("<li>the <a href='secured'>secured page</a></li>");
+        result.appendToBody("<li>the <a href='secured'>secured page</a> (accessible to logged users with role1 or role2)</li>");
+        result.appendToBody("<li>the <a href='ultrasecured'>very secured page</a> (accessible only to users with role1)</li>");
         result.appendToBody("<li>the <a href='public'>public page</a></li>");
         result.appendToBody("</ul>");
 
         result.activate(request, response);
     }
 
-    private void action_logged(HttpServletRequest request, HttpServletResponse response) throws IOException {
+     private void action_logged(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HTMLResult result = new HTMLResult(getServletContext());
         result.setTitle("Welcome back");
         Map<String, Object> li = (Map<String, Object>) request.getAttribute("logininfo");
         result.appendToBody("<h1>Welcome back, " +  li.get("username") + "</h1>");
         result.appendToBody("<p>You IP address is: " + li.get("ip") + "</p>");
         result.appendToBody("<p>Your connection started on: " + ((LocalDateTime) li.get("session-start-ts")).format(DateTimeFormatter.ISO_DATE_TIME) + "</p>");
+        result.appendToBody("<p>Your roles are: " + String.join(", ", (List<String>)li.get("roles")) + "</p>");
         result.appendToBody("<p><a href=\"logout?referrer=" + URLEncoder.encode((String)request.getAttribute("thispageurl"), "UTF-8") + "\">Logout</a></p>");
         result.appendToBody("<p>Now you can access both</p><ul>");
         result.appendToBody("<li>the <a href='secured'>secured page</a></li>");
+        result.appendToBody("<li>the <a href='ultrasecured'>very secured page</a> (accessible only to users with role1)</li>");
         result.appendToBody("<li>the <a href='public'>public page</a></li>");
         result.appendToBody("</ul>");
 
         result.activate(request, response);
     }
+
 
   
     @Override
