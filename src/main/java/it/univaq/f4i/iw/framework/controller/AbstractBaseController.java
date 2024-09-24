@@ -85,19 +85,15 @@ public abstract class AbstractBaseController extends HttpServlet {
     protected boolean checkLoggedAccess(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException, IOException {
         HttpSession s = SecurityHelpers.checkSession(request);
         String uri = request.getRequestURI();
-        Map<Pattern, String> protect = (Map<Pattern, String>) getServletContext().getAttribute("protect");
-        boolean is_protected = protect.entrySet().stream()
-                .filter((entry) -> (entry.getKey().matcher(uri).find()))
-                .findAny()
-                .isPresent();
-
+        Pattern protect = (Pattern) getServletContext().getAttribute("protect_pattern");
+        boolean is_protected = protect.matcher(uri).find();
         return (!is_protected || (s != null));
     }
 
     protected boolean checkAccessRoles(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException, IOException {
         HttpSession s = request.getSession(false);
         String uri = request.getRequestURI();        
-        Map<Pattern, String> protect = (Map<Pattern, String>) getServletContext().getAttribute("protect");
+        Map<Pattern, String> protect = (Map<Pattern, String>) getServletContext().getAttribute("role_access_patterns");
         List<String> allowed_roles = protect.entrySet().stream()
                 .map((entry) -> ((entry.getKey().matcher(uri).find()) ? entry.getValue() : null))
                 .filter((role) -> (role != null))

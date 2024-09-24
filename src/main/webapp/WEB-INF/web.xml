@@ -2,15 +2,15 @@
 <web-app version="4.0" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd">
     <context-param>
         <param-name>security.protect.patterns.role1</param-name>
-        <!-- these pages are accessible by users with role1 -->
+        <!-- these pages are not public and accessible by users with role1 -->
         <param-value>/secured,/ultrasecured</param-value>
     </context-param>
     <context-param>
         <param-name>security.protect.patterns.role2</param-name>
-        <!-- these pages are (also) accessible by users with role2 -->
+        <!-- these pages are not public and accessible by users with role2 -->
         <param-value>/secured</param-value>
     </context-param>
-    <context-param>
+     <context-param>
         <param-name>data.source</param-name>
         <param-value>jdbc/webdb2</param-value>
     </context-param>

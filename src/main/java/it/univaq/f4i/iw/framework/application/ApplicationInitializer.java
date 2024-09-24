@@ -1,8 +1,10 @@
 package it.univaq.f4i.iw.framework.application;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,7 +27,9 @@ public class ApplicationInitializer implements ServletContextListener {
 
         DataSource ds = null;
         Pattern protect_pattern = null;
-        Map<Pattern, String> protect = new HashMap<>();
+        Pattern role_access_pattern = null;
+        List<String> all_access_patterns = new ArrayList<>();
+        Map<Pattern, String> role_access_patterns = new HashMap<>();
 
         //init protection pattern
         Enumeration parms = event.getServletContext().getInitParameterNames();
@@ -36,11 +40,12 @@ public class ApplicationInitializer implements ServletContextListener {
                 String pattern = event.getServletContext().getInitParameter(name);
                 if (pattern != null && !pattern.isBlank()) {
                     String[] split = pattern.split("\\s*,\\s*");
-                    protect_pattern = Pattern.compile(Arrays.stream(split).collect(Collectors.joining("$)|(?:", "(?:", "$)")));
+                    all_access_patterns.addAll(Arrays.asList(split));
+                    role_access_pattern = Pattern.compile(Arrays.stream(split).collect(Collectors.joining("$)|(?:", "(?:", "$)")));
                 } else {
-                    protect_pattern = Pattern.compile("a^"); //this regular expression does not match anything!
+                    role_access_pattern = Pattern.compile("a^"); //this regular expression does not match anything!
                 }
-                protect.put(protect_pattern, role);
+                role_access_patterns.put(role_access_pattern, role);
             }
         }
 
@@ -52,7 +57,14 @@ public class ApplicationInitializer implements ServletContextListener {
             Logger.getLogger(ApplicationInitializer.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        event.getServletContext().setAttribute("protect", protect);
+        
+        if (!all_access_patterns.isEmpty()) {
+            protect_pattern = Pattern.compile(all_access_patterns.stream().collect(Collectors.joining("$)|(?:", "(?:", "$)")));
+        } else {
+            protect_pattern = Pattern.compile("a^"); //this regular expression does not match anything!
+        }
+        event.getServletContext().setAttribute("protect_pattern",protect_pattern);
+        event.getServletContext().setAttribute("role_access_patterns", role_access_patterns);
         event.getServletContext().setAttribute("datasource", ds);
     }
 
