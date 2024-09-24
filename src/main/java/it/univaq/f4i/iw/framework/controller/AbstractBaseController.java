@@ -7,11 +7,13 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import static java.util.function.IntUnaryOperator.identity;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -92,13 +94,11 @@ public abstract class AbstractBaseController extends HttpServlet {
 
     protected boolean checkAccessRoles(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException, IOException {
         HttpSession s = request.getSession(false);
-        String uri = request.getRequestURI();        
-        Map<Pattern, String> protect = (Map<Pattern, String>) getServletContext().getAttribute("role_access_patterns");
-        List<String> allowed_roles = protect.entrySet().stream()
-                .map((entry) -> ((entry.getKey().matcher(uri).find()) ? entry.getValue() : null))
-                .filter((role) -> (role != null))
-                .distinct()
-                .toList();
+        String uri = request.getRequestURI();
+        Map<Pattern, String[]> role_access_patterns = (Map<Pattern, String[]>) getServletContext().getAttribute("role_access_patterns");
+        List<String> allowed_roles = role_access_patterns.entrySet().stream()
+                .flatMap((entry) -> ((entry.getKey().matcher(uri).find()) ? Arrays.stream(entry.getValue()) : Stream.empty()))
+                .distinct().toList();
 
         return (allowed_roles.isEmpty()
                 || (s != null && allowed_roles.stream().filter(((List<String>) s.getAttribute("roles"))::contains).findAny().isPresent()));

@@ -29,26 +29,30 @@ public class ApplicationInitializer implements ServletContextListener {
         Pattern protect_pattern = null;
         Pattern role_access_pattern = null;
         List<String> all_access_patterns = new ArrayList<>();
-        Map<Pattern, String> role_access_patterns = new HashMap<>();
+        Map<Pattern, String[]> role_access_patterns = new HashMap<>();
 
         //init protection pattern
-        Enumeration parms = event.getServletContext().getInitParameterNames();
-        while (parms.hasMoreElements()) {
-            String name = (String) parms.nextElement();
-            if (name.startsWith("security.protect.patterns")) {
-                String role = name.length() > 25 ? name.substring(26).replace(".", "_") : null;
-                String pattern = event.getServletContext().getInitParameter(name);
-                if (pattern != null && !pattern.isBlank()) {
-                    String[] split = pattern.split("\\s*,\\s*");
-                    all_access_patterns.addAll(Arrays.asList(split));
-                    role_access_pattern = Pattern.compile(Arrays.stream(split).collect(Collectors.joining("$)|(?:", "(?:", "$)")));
-                } else {
-                    role_access_pattern = Pattern.compile("a^"); //this regular expression does not match anything!
+        String configuration = event.getServletContext().getInitParameter("security.protect.patterns");
+        if (configuration != null && !configuration.isBlank()) {
+            String[] rules = configuration.split("\\s*;\\s*");
+            for (String rule : rules) {
+                String[] patterns_roles = rule.split("\\s*=\\s*");
+                String[] patterns = patterns_roles[0].split("\\s*,\\s*");
+                all_access_patterns.addAll(Arrays.asList(patterns));
+                if (patterns_roles.length > 1) {
+                    role_access_pattern = Pattern.compile(Arrays.stream(patterns).collect(Collectors.joining("$)|(?:", "(?:", "$)")));
+                    String[] roles = patterns_roles[1].split("\\s*,\\s*");
+                    role_access_patterns.put(role_access_pattern, roles);
                 }
-                role_access_patterns.put(role_access_pattern, role);
             }
         }
-
+        
+        if (!all_access_patterns.isEmpty()) {
+            protect_pattern = Pattern.compile(all_access_patterns.stream().collect(Collectors.joining("$)|(?:", "(?:", "$)")));
+        } else {
+            protect_pattern = Pattern.compile("a^"); //this regular expression does not match anything!
+        }
+       
         //init data source
         try {
             InitialContext ctx = new InitialContext();
@@ -58,12 +62,7 @@ public class ApplicationInitializer implements ServletContextListener {
         }
 
         
-        if (!all_access_patterns.isEmpty()) {
-            protect_pattern = Pattern.compile(all_access_patterns.stream().collect(Collectors.joining("$)|(?:", "(?:", "$)")));
-        } else {
-            protect_pattern = Pattern.compile("a^"); //this regular expression does not match anything!
-        }
-        event.getServletContext().setAttribute("protect_pattern",protect_pattern);
+        event.getServletContext().setAttribute("protect_pattern", protect_pattern);
         event.getServletContext().setAttribute("role_access_patterns", role_access_patterns);
         event.getServletContext().setAttribute("datasource", ds);
     }
