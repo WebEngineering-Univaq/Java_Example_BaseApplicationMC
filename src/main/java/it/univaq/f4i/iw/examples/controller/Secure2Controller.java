@@ -19,7 +19,7 @@ public class Secure2Controller extends ApplicationBaseController {
         HTMLResult result = new HTMLResult(getServletContext());
         result.setTitle("Very Very Confidential page");
         result.appendToBody("<h1>Very Very Confidential page</h1>");
-        result.appendToBody("<p>Yiu cannot access this page unless you have role1</p>");
+        result.appendToBody("<p>You cannot access this page unless you have role1</p>");
         result.appendToBody("<p><a href=\"homepage\">Return to homepage</a></p>");
         result.activate(request, response);
 

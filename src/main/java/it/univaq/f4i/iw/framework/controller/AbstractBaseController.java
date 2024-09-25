@@ -6,12 +6,10 @@ import it.univaq.f4i.iw.framework.utils.ServletHelpers;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import static java.util.function.IntUnaryOperator.identity;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import javax.servlet.ServletException;
@@ -65,31 +63,35 @@ public abstract class AbstractBaseController extends HttpServlet {
 
     ////////////////////////////////////////////////
     private void processBaseRequest(HttpServletRequest request, HttpServletResponse response) {
+        //check the session data
+        HttpSession s = SecurityHelpers.checkSession(request);
         //creating the datalayer opens the actual (per-request) connection to the shared datasource
         try (DataLayer datalayer = createDataLayer((DataSource) getServletContext().getAttribute("datasource"))) {
             datalayer.init();
             initRequest(request, datalayer);
-            if (checkLoggedAccess(request, response)) {
-                if (checkAccessRoles(request, response)) {
-                    accessCheckSuccessful(request, response);
-                    processRequest(request, response);
+            //check the access rules for this resource
+            if (hasLoggedAccess(request, response)) {
+                if (s != null) {
+                    if (!checkAccessRoles(request, response)) {
+                        accessCheckRolesFailed(request, response);
+                        return;
+                    }
                 } else {
-                    accessCheckRolesFailed(request, response);
+                    accessCheckLoginFailed(request, response);
+                    return;
                 }
-            } else {
-                accessCheckLoginFailed(request, response);
             }
+            accessCheckSuccessful(request, response);
+            processRequest(request, response);
         } catch (Exception ex) {
             handleError(ex, request, response);
         }
     }
 
-    protected boolean checkLoggedAccess(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException, IOException {
-        HttpSession s = SecurityHelpers.checkSession(request);
+    protected boolean hasLoggedAccess(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException, IOException {
         String uri = request.getRequestURI();
         Pattern protect = (Pattern) getServletContext().getAttribute("protect_pattern");
-        boolean is_protected = protect.matcher(uri).find();
-        return (!is_protected || (s != null));
+        return protect.matcher(uri).find();
     }
 
     protected boolean checkAccessRoles(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException, IOException {
