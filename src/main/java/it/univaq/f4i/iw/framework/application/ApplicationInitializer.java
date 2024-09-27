@@ -11,8 +11,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 import javax.sql.DataSource;
 
 /**
