@@ -106,6 +106,13 @@ public abstract class AbstractBaseController extends HttpServlet {
                 || (s != null && allowed_roles.stream().filter(((List<String>) s.getAttribute("roles"))::contains).findAny().isPresent()));
     }
 
+    //helper to check if the current user has a particular role, useful to further restrict to a role
+    //only particular actions of a controller
+    protected boolean checkRole(HttpServletRequest request, String role) {
+        HttpSession s = request.getSession(false);
+        return (s != null && (((List<String>) s.getAttribute("roles")).contains(role)));
+    }
+
     protected void handleError(String message, HttpServletRequest request, HttpServletResponse response) {
         ServletHelpers.handleError(message, request, response, getServletContext());
     }
