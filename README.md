@@ -18,8 +18,13 @@ The code is organized to best match the lecture topics and examples. It is not i
 ## Installation
 
 This is a Maven-based project. Simply download the code and open it in any Maven-enabled IDE such as Netbeans or Eclipse. 
-Additionally, you may need to *configure the deploy settings*: the application is intended to be run on the **JavaEE 8** platform inside **Apache Tomcat version 9**. 
-Refer to your IDE help files to perform this step. For example, in Apache Netbeans, you must enter these settings in Project properties > Run.
+
+*Please do not download the code from the main branch, but from the branch corresponding to the platform used in the lectures:**
+- the **JEE** branch contains the application version to be run on the **JavaEE 8** platform inside **Apache Tomcat version 9**. 
+- the **JKEE** branch contains the application version to be run on the **JakartaEE 10** platform inside **Apache Tomcat version 10**. 
+
+Note that you may need to *configure the deploy settings* based on the chosen platform/server: refer to your IDE help files to perform this step. For example, in Apache Netbeans, you must enter these settings in Project properties > Run.
+
 Finally, this example uses a MySQL database. Therefore, you need a working instance of **MySQL version 8 or above**. 
 **A SQL script to setup the required database is included in the project.**
 Such database setup script must be run as root on the DBMS in order to create the database, populate it, and also create the application-specific 
