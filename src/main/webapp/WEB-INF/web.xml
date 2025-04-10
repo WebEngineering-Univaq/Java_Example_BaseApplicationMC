@@ -8,7 +8,7 @@
     </context-param>
      <context-param>
         <param-name>data.source</param-name>
-        <param-value>jdbc/webdb2</param-value>
+        <param-value>jdbc/newspaper</param-value>
     </context-param>
     <listener>
         <listener-class>it.univaq.f4i.iw.framework.application.ApplicationInitializer</listener-class>
@@ -68,7 +68,7 @@
         <welcome-file>homepage</welcome-file>
     </welcome-file-list>
     <resource-ref>
-        <res-ref-name>jdbc/webdb2</res-ref-name>
+        <res-ref-name>jdbc/newspaper</res-ref-name>
         <res-type>javax.sql.DataSource</res-type>
         <res-auth>Container</res-auth>
         <res-sharing-scope>Shareable</res-sharing-scope>
