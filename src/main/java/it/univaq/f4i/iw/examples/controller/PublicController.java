@@ -12,8 +12,8 @@ import it.univaq.f4i.iw.framework.data.DataException;
 import it.univaq.f4i.iw.framework.view.HTMLResult;
 import java.io.*;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  *

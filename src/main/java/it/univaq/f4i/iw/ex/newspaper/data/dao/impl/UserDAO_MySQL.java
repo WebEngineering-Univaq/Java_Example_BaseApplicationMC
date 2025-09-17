@@ -13,9 +13,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import it.univaq.f4i.iw.framework.data.DataLayer;
 import it.univaq.f4i.iw.framework.data.OptimisticLockException;
-import it.univaq.f4i.iw.framework.security.SecurityHelpers;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 import java.sql.Statement;
 import java.util.Arrays;
 
@@ -82,15 +79,12 @@ public class UserDAO_MySQL extends DAO implements UserDAO {
             a.setKey(rs.getInt("ID"));
             a.setUsername(rs.getString("username"));
             //a.setPassword(rs.getString("password"));            
-            a.setPassword(SecurityHelpers.getPasswordHashPBKDF2("p")); //for testing purposes only!
+            a.setPassword(rs.getString("password")); 
             a.setRoles(Arrays.asList(rs.getString("roles").split("\\|")));
             a.setVersion(rs.getLong("version"));
             return a;
-        } catch (SQLException ex) {
+        }catch (SQLException ex) {
             throw new DataException("Unable to create user object form ResultSet", ex);
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException ex) {
-            //for testing purposes only!
-            throw new DataException("Password encoding problem (test)", ex);
         }
     }
 

@@ -6,17 +6,17 @@ import it.univaq.f4i.iw.framework.utils.ServletHelpers;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import static java.util.function.IntUnaryOperator.identity;
 import java.util.regex.Pattern;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
+import java.util.stream.Stream;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import javax.sql.DataSource;
 
 /**
@@ -63,49 +63,54 @@ public abstract class AbstractBaseController extends HttpServlet {
 
     ////////////////////////////////////////////////
     private void processBaseRequest(HttpServletRequest request, HttpServletResponse response) {
+        //check the session data
+        HttpSession s = SecurityHelpers.checkSession(request);
         //creating the datalayer opens the actual (per-request) connection to the shared datasource
         try (DataLayer datalayer = createDataLayer((DataSource) getServletContext().getAttribute("datasource"))) {
             datalayer.init();
             initRequest(request, datalayer);
-            if (checkLoggedAccess(request, response)) {
-                if (checkAccessRoles(request, response)) {
-                    accessCheckSuccessful(request, response);
-                    processRequest(request, response);
+            //check the access rules for this resource
+            if (hasLoggedAccess(request, response)) {
+                if (s != null) {
+                    if (!checkAccessRoles(request, response)) {
+                        accessCheckRolesFailed(request, response);
+                        return;
+                    }
                 } else {
-                    accessCheckRolesFailed(request, response);
+                    accessCheckLoginFailed(request, response);
+                    return;
                 }
-            } else {
-                accessCheckLoginFailed(request, response);
             }
+            accessCheckSuccessful(request, response);
+            processRequest(request, response);
         } catch (Exception ex) {
             handleError(ex, request, response);
         }
     }
 
-    protected boolean checkLoggedAccess(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException, IOException {
-        HttpSession s = SecurityHelpers.checkSession(request);
+    protected boolean hasLoggedAccess(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException, IOException {
         String uri = request.getRequestURI();
-        Map<Pattern, String> protect = (Map<Pattern, String>) getServletContext().getAttribute("protect");
-        boolean is_protected = protect.entrySet().stream()
-                .filter((entry) -> (entry.getKey().matcher(uri).find()))
-                .findAny()
-                .isPresent();
-
-        return (!is_protected || (s != null));
+        Pattern protect = (Pattern) getServletContext().getAttribute("protect_pattern");
+        return protect.matcher(uri).find();
     }
 
     protected boolean checkAccessRoles(HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException, IOException {
         HttpSession s = request.getSession(false);
-        String uri = request.getRequestURI();        
-        Map<Pattern, String> protect = (Map<Pattern, String>) getServletContext().getAttribute("protect");
-        List<String> allowed_roles = protect.entrySet().stream()
-                .map((entry) -> ((entry.getKey().matcher(uri).find()) ? entry.getValue() : null))
-                .filter((role) -> (role != null))
-                .distinct()
-                .toList();
+        String uri = request.getRequestURI();
+        Map<Pattern, String[]> role_access_patterns = (Map<Pattern, String[]>) getServletContext().getAttribute("role_access_patterns");
+        List<String> allowed_roles = role_access_patterns.entrySet().stream()
+                .flatMap((entry) -> ((entry.getKey().matcher(uri).find()) ? Arrays.stream(entry.getValue()) : Stream.empty()))
+                .distinct().toList();
 
         return (allowed_roles.isEmpty()
                 || (s != null && allowed_roles.stream().filter(((List<String>) s.getAttribute("roles"))::contains).findAny().isPresent()));
+    }
+
+    //helper to check if the current user has a particular role, useful to further restrict to a role
+    //only particular actions of a controller
+    protected boolean checkRole(HttpServletRequest request, String role) {
+        HttpSession s = request.getSession(false);
+        return (s != null && (((List<String>) s.getAttribute("roles")).contains(role)));
     }
 
     protected void handleError(String message, HttpServletRequest request, HttpServletResponse response) {
