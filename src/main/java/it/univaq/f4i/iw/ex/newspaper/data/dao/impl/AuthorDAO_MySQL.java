@@ -32,7 +32,7 @@ public class AuthorDAO_MySQL extends DAO implements AuthorDAO {
             //precompiliamo tutte le query utilizzate nella classe
             //precompile all the queries uses in this class
             sAuthorByID = connection.prepareStatement("SELECT * FROM author WHERE ID=?");
-            sAuthors = connection.prepareStatement("SELECT ID FROM author");
+            sAuthors = connection.prepareStatement("SELECT * FROM author");
         } catch (SQLException ex) {
             throw new DataException("Error initializing newspaper data layer", ex);
         }
@@ -67,7 +67,7 @@ public class AuthorDAO_MySQL extends DAO implements AuthorDAO {
     //helper
     private AuthorProxy createAuthor(ResultSet rs) throws DataException {
         try {
-            AuthorProxy a = (AuthorProxy)createAuthor();
+            AuthorProxy a = (AuthorProxy) createAuthor();
             a.setKey(rs.getInt("ID"));
             a.setName(rs.getString("name"));
             a.setSurname(rs.getString("surname"));
@@ -99,7 +99,6 @@ public class AuthorDAO_MySQL extends DAO implements AuthorDAO {
                         //note how we use here the helper constructor
                         //of the AuthorImpl class to quickly
                         //create an instance from the current record
-
                         a = createAuthor(rs);
                         //e lo mettiamo anche nella cache
                         //and put it also in the cache
@@ -119,7 +118,13 @@ public class AuthorDAO_MySQL extends DAO implements AuthorDAO {
 
         try (ResultSet rs = sAuthors.executeQuery()) {
             while (rs.next()) {
-                result.add(getAuthor(rs.getInt("ID")));
+                //evitiamo l'N+1 query problem!
+                //avoid N+1 query problem!
+                Author a = createAuthor(rs);
+                //non dimentichiamo anche qui la cache!
+                //don't forget to put each record in the cache!
+                dataLayer.getCache().add(Author.class, a);
+                result.add(a);
             }
         } catch (SQLException ex) {
             throw new DataException("Unable to load authors", ex);

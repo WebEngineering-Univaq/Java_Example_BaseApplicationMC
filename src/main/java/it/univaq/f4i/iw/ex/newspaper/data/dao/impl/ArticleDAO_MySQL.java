@@ -38,9 +38,9 @@ public class ArticleDAO_MySQL extends DAO implements ArticleDAO {
             //precompiliamo tutte le query utilizzate nella classe
             //precompile all the queries uses in this class
             sArticleByID = connection.prepareStatement("SELECT * FROM article WHERE ID=?");
-            sArticlesByIssue = connection.prepareStatement("SELECT ID AS articleID FROM article WHERE issueID=?");
-            sArticles = connection.prepareStatement("SELECT ID AS articleID FROM article");
-            sUnassignedArticles = connection.prepareStatement("SELECT ID AS articleID FROM article WHERE issueID IS NULL");
+            sArticlesByIssue = connection.prepareStatement("SELECT * FROM article WHERE issueID=?");
+            sArticles = connection.prepareStatement("SELECT * FROM article");
+            sUnassignedArticles = connection.prepareStatement("SELECT * FROM article WHERE issueID IS NULL");
 
             //notare l'ultimo paametro extra di questa chiamata a
             //prepareStatement: lo usiamo per assicurarci che il JDBC
@@ -63,17 +63,13 @@ public class ArticleDAO_MySQL extends DAO implements ArticleDAO {
         //anche chiudere i PreparedStamenent � una buona pratica...
         //also closing PreparedStamenents is a good practice...
         try {
-
             sArticleByID.close();
-
             sArticlesByIssue.close();
             sArticles.close();
             sUnassignedArticles.close();
-
             iArticle.close();
             uArticle.close();
             dArticle.close();
-
         } catch (SQLException ex) {
             //
         }
@@ -137,15 +133,13 @@ public class ArticleDAO_MySQL extends DAO implements ArticleDAO {
             sArticlesByIssue.setInt(1, issue.getKey());
             try (ResultSet rs = sArticlesByIssue.executeQuery()) {
                 while (rs.next()) {
-                    //la query  estrae solo gli ID degli articoli selezionati
-                    //poi sarà getArticle che, con le relative query, popolerà
-                    //gli oggetti corrispondenti. Meno efficiente, ma così la
-                    //logica di creazione degli articoli è meglio incapsulata
-                    //the query extracts only the IDs of the selected articles 
-                    //then getArticle, with its queries, will populate the 
-                    //corresponding objects. Less efficient, but in this way
-                    //article creation logic is better encapsulated
-                    result.add((Article) getArticle(rs.getInt("articleID")));
+                    //evitiamo l'N+1 query problem!
+                    //avoid N+1 query problem!
+                    Article a = createArticle(rs);
+                    //non dimentichiamo anche qui la cache!
+                    //don't forget to put each record in the cache!
+                    dataLayer.getCache().add(Article.class, a);
+                    result.add(a);
                 }
             }
         } catch (SQLException ex) {
@@ -160,7 +154,13 @@ public class ArticleDAO_MySQL extends DAO implements ArticleDAO {
 
         try (ResultSet rs = sArticles.executeQuery()) {
             while (rs.next()) {
-                result.add((Article) getArticle(rs.getInt("articleID")));
+                //evitiamo l'N+1 query problem!
+                //avoid N+1 query problem!
+                Article a = createArticle(rs);
+                //non dimentichiamo anche qui la cache!
+                //don't forget to put each record in the cache!
+                dataLayer.getCache().add(Article.class, a);
+                result.add(a);
             }
         } catch (SQLException ex) {
             throw new DataException("Unable to load articles", ex);
@@ -174,7 +174,13 @@ public class ArticleDAO_MySQL extends DAO implements ArticleDAO {
 
         try (ResultSet rs = sUnassignedArticles.executeQuery()) {
             while (rs.next()) {
-                result.add((Article) getArticle(rs.getInt("articleID")));
+                //evitiamo l'N+1 query problem!
+                //avoid N+1 query problem!
+                Article a = createArticle(rs);
+                //non dimentichiamo anche qui la cache!
+                //don't forget to put each record in the cache!
+                dataLayer.getCache().add(Article.class, a);
+                result.add(a);
             }
         } catch (SQLException ex) {
             throw new DataException("Unable to load unassigned articles", ex);

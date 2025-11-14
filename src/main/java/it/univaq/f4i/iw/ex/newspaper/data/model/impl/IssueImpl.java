@@ -6,7 +6,6 @@ import it.univaq.f4i.iw.ex.newspaper.data.model.Issue;
 import it.univaq.f4i.iw.framework.data.DataItemImpl;
 import java.time.LocalDate;
 
-import java.util.Date;
 import java.util.List;
 
 public class IssueImpl  extends DataItemImpl<Integer> implements Issue {

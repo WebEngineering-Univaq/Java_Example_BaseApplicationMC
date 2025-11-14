@@ -37,8 +37,8 @@ public class ImageDAO_MySQL extends DAO implements ImageDAO {
             //precompile all the queries uses in this class
             sImageByID = connection.prepareStatement("SELECT * FROM image WHERE ID=?");
 
-            sImagesByIssue = connection.prepareStatement("SELECT article_image.imageID FROM article_image INNER JOIN article ON (article_image.articleID = article.ID) WHERE article.issueID=?");
-            sImagesByArticle = connection.prepareStatement("SELECT imageID FROM article_image WHERE articleID=?");
+            sImagesByIssue = connection.prepareStatement("SELECT image.* FROM article_image INNER JOIN article ON (article_image.articleID = article.ID) INNER JOIN image ON (image.ID=article_image.imageID) WHERE article.issueID=?");
+            sImagesByArticle = connection.prepareStatement("SELECT image.* FROM article_image INNER JOIN image ON (image.ID=article_image.imageID) WHERE article_image.articleID=?");
             sImageData = connection.prepareStatement("SELECT data FROM image WHERE ID=?");
 
         } catch (SQLException ex) {
@@ -48,7 +48,7 @@ public class ImageDAO_MySQL extends DAO implements ImageDAO {
 
     @Override
     public void destroy() throws DataException {
-        //anche chiudere i PreparedStamenent � una buona pratica...
+        //anche chiudere i PreparedStamenent è una buona pratica...
         //also closing PreparedStamenents is a good practice...
         try {
             sImageByID.close();
@@ -70,7 +70,7 @@ public class ImageDAO_MySQL extends DAO implements ImageDAO {
 
     //helper    
     private ImageProxy createImage(ResultSet rs) throws DataException {
-        ImageProxy i = (ImageProxy)createImage();
+        ImageProxy i = (ImageProxy) createImage();
         try {
             i.setKey(rs.getInt("ID"));
             i.setImageSize(rs.getLong("size"));
@@ -120,7 +120,13 @@ public class ImageDAO_MySQL extends DAO implements ImageDAO {
             sImagesByArticle.setInt(1, article.getKey());
             try (ResultSet rs = sImagesByArticle.executeQuery()) {
                 while (rs.next()) {
-                    result.add(getImage(rs.getInt("ImageID")));
+                    //evitiamo l'N+1 query problem!
+                    //avoid N+1 query problem!
+                    Image i = createImage(rs);
+                    //non dimentichiamo anche qui la cache!
+                    //don't forget to put each record in the cache!
+                    dataLayer.getCache().add(Image.class, i);
+                    result.add(i);
                 }
             }
         } catch (SQLException ex) {
@@ -136,7 +142,13 @@ public class ImageDAO_MySQL extends DAO implements ImageDAO {
             sImagesByIssue.setInt(1, issue.getKey());
             try (ResultSet rs = sImagesByIssue.executeQuery()) {
                 while (rs.next()) {
-                    result.add(getImage(rs.getInt("imageID")));
+                    //evitiamo l'N+1 query problem!
+                    //avoid N+1 query problem!
+                    Image i = createImage(rs);
+                    //non dimentichiamo anche qui la cache!
+                    //don't forget to put each record in the cache!
+                    dataLayer.getCache().add(Image.class, i);
+                    result.add(i);
                 }
             }
         } catch (SQLException ex) {
