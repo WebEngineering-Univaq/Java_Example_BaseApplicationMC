@@ -77,10 +77,8 @@ public class ImageImpl  extends DataItemImpl<Integer> implements Image {
     @Override
     public void setImageData(InputStream is) throws DataException {
 
-        OutputStream os = null;
-        try {
+        try (OutputStream os = new FileOutputStream(imageFilename)) {
             byte[] buffer = new byte[1024];
-            os = new FileOutputStream(imageFilename);
             int read;
             while ((read = is.read(buffer)) > 0) {
                 os.write(buffer, 0, read);
@@ -89,12 +87,6 @@ public class ImageImpl  extends DataItemImpl<Integer> implements Image {
             throw new DataException("Error storing image file", ex);
         } catch (IOException ex) {
             throw new DataException("Error storing image file", ex);
-        } finally {
-            try {
-                os.close();
-            } catch (IOException ex) {
-                Logger.getLogger(ImageImpl.class.getName()).log(Level.SEVERE, null, ex);
-            }
         }
     }
 
